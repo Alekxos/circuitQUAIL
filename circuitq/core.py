@@ -999,7 +999,18 @@ class CircuitQ:
         # Define numerical Hamiltonian via lambdify
         # =============================================================================
         input_list = q_list + q_quadratic_list + phi_list + cos_charge_list + self.h_parameters
+        print(f"q list: {q_list}")
+        print(f"q_quadratic_list: {q_quadratic_list}")
+        print(f"phi_list: {phi_list}")
+        print(f"cos_charge_list: {cos_charge_list}")
+        print(f"h params: {self.h_parameters}")
+        print(f"h_imp: {self.h_imp}")
         h_num_lambda = sp.lambdify(input_list, self.h_imp, modules=[{'cos': mtx_cos}, 'numpy'])
+        print(f"q_matrices: {q_matrices}")
+        print(f"q_quadratic_matrices: {q_quadratic_matrices}")
+        print(f"phi_matrices: {phi_matrices}")
+        print(f"cos_charge_matrices: {cos_charge_matrices}")
+        print(f"_parameter_values: {_parameter_values}")
         self.input_num_list = q_matrices + q_quadratic_matrices + phi_matrices + \
                               cos_charge_matrices + _parameter_values
         self.h_num = h_num_lambda(*self.input_num_list)
