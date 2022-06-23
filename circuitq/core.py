@@ -1015,6 +1015,8 @@ class CircuitQ:
         self.input_num_list = q_matrices + q_quadratic_matrices + phi_matrices + \
                               cos_charge_matrices + _parameter_values
         self.h_num = h_num_lambda(*self.input_num_list)
+        param_lists = [q_list, q_quadratic_list, phi_list, cos_charge_list, self.h_parameters]
+        param_matrices = [q_matrices, q_quadratic_matrices, phi_matrices, cos_charge_matrices, _parameter_values]
 
         # =============================================================================
         # Define numerical voltage operator via lambdify
@@ -1074,7 +1076,7 @@ class CircuitQ:
             input_num = phi_matrices + _parameter_values
             self.edge_flux_inductance_num[indices] = num_element(*input_num)
 
-        return self.h_num
+        return param_lists, param_matrices, self.h_num
 
     def get_eigensystem(self, n_eig = 30):
         """
