@@ -868,6 +868,7 @@ class CircuitQ:
         sin_charge_list = []
         sin_phi_half_list = []
         nbr_subsystems = len(self.nodes_wo_ground)
+        print(f"# subsystems: {nbr_subsystems}")
         self.n_cutoff = int((self.n_dim-1) / 2 )
         self.flux_list = np.linspace(-self.grid_length, self.grid_length, self.n_dim)
         self.charge_list = 2*self.e*np.arange(-self.n_cutoff, self.n_cutoff+1)
