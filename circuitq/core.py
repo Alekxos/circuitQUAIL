@@ -738,7 +738,7 @@ class CircuitQ:
         def der_mtx(coord_list, periodic=True):
             dim = len(coord_list)
             delta = abs(coord_list[1] - coord_list[0])
-            m = np.zeros((dim, dim))
+            m = jnp.zeros((dim, dim))
             for n in range(dim):
                 if n + 1 <= dim - 1:
                     m[n, n + 1] = 1
@@ -754,7 +754,7 @@ class CircuitQ:
         def scnd_der_mtx(coord_list, periodic=True):
             dim = len(coord_list)
             delta = abs(coord_list[1] - coord_list[0])
-            m = np.zeros((dim, dim))
+            m = jnp.zeros((dim, dim))
             for n in range(dim):
                 m[n, n] = -2
                 if n + 1 <= dim - 1:
@@ -770,7 +770,7 @@ class CircuitQ:
         # Phi matrix
         def phi_mtx(coord_list):
             dim = len(coord_list)
-            m = np.zeros((dim, dim))
+            m = jnp.zeros((dim, dim))
             for n, item in enumerate(coord_list):
                 m[n, n] = item
             return m
@@ -778,22 +778,22 @@ class CircuitQ:
         # cos function
         def mtx_cos(m):
             m_dia = m.diagonal()
-            return np.diag(np.cos(m_dia))
+            return jnp.diag(jnp.cos(m_dia))
 
         # sin function
         def mtx_sin(m):
             m_dia = m.diagonal()
-            return np.diag(np.sin(m_dia))
+            return jnp.diag(jnp.sin(m_dia))
 
         # Charge matrix
         def q_mtx(n_cutoff):
             diagonal = 2*self.e*np.arange(-n_cutoff, n_cutoff+1)
-            return np.diag(diagonal)
+            return jnp.diag(diagonal)
 
         # e^{i \Phi} matrix
         def cmplx_exp_phi_mtx(n_cutoff):
             dim = 2*n_cutoff+1
-            m = np.zeros((dim, dim))
+            m = jnp.zeros((dim, dim))
             for n in range(1,dim):
                 m[n,n-1] = 1
             return m
@@ -837,7 +837,7 @@ class CircuitQ:
         inductances_indices = list(self.edge_flux_inductance.keys())
         if unit_cell:
             for n in self.nodes_wo_ground:
-                phi_grid = np.linspace(-np.pi * self.phi_0, np.pi * self.phi_0,
+                phi_grid = jnp.linspace(-np.pi * self.phi_0, np.pi * self.phi_0,
                                        self.n_dim)
                 self.flux_grid_dict[n] = phi_grid
                 for loop_flux_index, loop_flux in self.loop_fluxes.items():
@@ -855,7 +855,7 @@ class CircuitQ:
                         loop_fluxes_considered.append(loop_flux)
         else:
             for n in self.nodes_wo_ground:
-                self.flux_grid_dict[n] = np.linspace(-self.grid_length, self.grid_length,
+                self.flux_grid_dict[n] = jnp.linspace(-self.grid_length, self.grid_length,
                                                      self.n_dim)
 
         # =============================================================================
@@ -872,8 +872,8 @@ class CircuitQ:
         nbr_subsystems = len(self.nodes_wo_ground)
         print(f"# subsystems: {nbr_subsystems}")
         self.n_cutoff = int((self.n_dim-1) / 2 )
-        self.flux_list = np.linspace(-self.grid_length, self.grid_length, self.n_dim)
-        self.charge_list = 2*self.e*np.arange(-self.n_cutoff, self.n_cutoff+1)
+        self.flux_list = jnp.linspace(-self.grid_length, self.grid_length, self.n_dim)
+        self.charge_list = 2 * self.e * jnp.arange(-self.n_cutoff, self.n_cutoff+1)
         self.mtx_id_list = [jnp.identity(self.n_dim) for n in range(nbr_subsystems)]
         n_mtx_list = 0
         # q-matrices in charge and flux basis, phi-matrices (flux basis)
@@ -953,8 +953,8 @@ class CircuitQ:
                     l_f = self.loop_fluxes[loop_flux_index]
                     parameter_pos = self.h_parameters.index(l_f)
                     loop_flux += self.parameter_values[parameter_pos]
-            mtx_num = np.exp(-1j*loop_flux/self.phi_0) * mtx_num
-            mtx_num_single_charge = np.exp(-1j*loop_flux/(2*self.phi_0)) * mtx_num_single_charge
+            mtx_num = jnp.exp(-1j*loop_flux/self.phi_0) * mtx_num
+            mtx_num_single_charge = jnp.exp(-1j*loop_flux/(2*self.phi_0)) * mtx_num_single_charge
             mtx_num_cos = 0.5*(mtx_num + mtx_num.getH())
             cos_charge_matrices.append(mtx_num_cos)
             cos_charge_list.append(cos)
@@ -1100,12 +1100,12 @@ class CircuitQ:
         if n_eig > dim_total-2:
             n_eig = dim_total - 2
         self.n_eig = n_eig
-        v0 = [0]*dim_total
-        v0[0] = 1
+        # v0 = [0]*dim_total
+        # v0[0] = 1
         # evals, estates = spa_linalg.eigsh(self.h_num, k=self.n_eig, which='SA'#)
         #                                   ,v0=v0)
         evals, estates = jnp.eigh(self.h_num)
-        idx_sort = np.argsort(evals)
+        idx_sort = jnp.argsort(evals)
         self.evals = evals[idx_sort]
         self.estates = estates[:, idx_sort]
 
@@ -1225,7 +1225,7 @@ class CircuitQ:
         # Gives nodes corresponding to subspace position :
         reversed_subspace_pos = dict(map(reversed, self.subspace_pos.items()))
         length = len(self.estates[:,0])
-        T = np.ones((length, length), dtype=np.complex)
+        T = jnp.ones((length, length), dtype=np.complex)
         for i in range(length):
             for j in range(length):
                 i_states = basis_states[i]
@@ -1234,13 +1234,13 @@ class CircuitQ:
                     if n in self.charge_subspaces:
                         node = reversed_subspace_pos[n]
                         flux_list = self.flux_grid_dict[node]
-                        T[i,j] *= np.exp(-1j*flux_list[i_states[n]]*
+                        T[i,j] *= jnp.exp(-1j*flux_list[i_states[n]]*
                                     self.charge_list[j_state]/self.hbar)
                     else:
                         if i_states[n]!=j_state:
                             T[i,j] = 0
                             break
-        T = T/np.sqrt(self.n_dim)
+        T = T / jnp.sqrt(self.n_dim)
         self.T_mtx = T
 
         # =============================================================================
@@ -1248,7 +1248,7 @@ class CircuitQ:
         # =============================================================================
         transformed_estates = []
         for n in range(self.n_eig):
-            transformed_estates.append(np.dot(T,self.estates[:,n]))
+            transformed_estates.append(jnp.dot(T,self.estates[:,n]))
 
         # =============================================================================
         # Normalize the states
@@ -1308,14 +1308,14 @@ class CircuitQ:
         # =============================================================================
         def cooper_to_even(dim):
             dim_single = 2*dim-1
-            mtx = np.zeros((dim_single, dim))
+            mtx = jnp.zeros((dim_single, dim))
             for n in range(dim):
                 mtx[2*n, n] = 1
             return mtx
 
         def cooper_to_odd(dim):
             dim_single = 2*dim-1
-            mtx = np.zeros((dim_single, dim))
+            mtx = jnp.zeros((dim_single, dim))
             for n in range(dim-1):
                 mtx[2*n+1, n] = 1
             return mtx
@@ -1334,7 +1334,7 @@ class CircuitQ:
         x_qp = 1e-8 #np.sqrt(2*np.pi*k_b*T/delta)*np.exp(-delta/(k_b*T))
         # Define Noise Spectral density without E_J (in accordance with
         # Catelani et al. https://doi.org/10.1103/PhysRevB.84.064517)
-        S_qp = x_qp * (8 / (self.hbar * np.pi)) * np.sqrt(
+        S_qp = x_qp * (8 / (self.hbar * np.pi)) * jnp.sqrt(
             2 * delta / self.omega_q)
         # print("CircuitQ: Omega {:e}".format(self.omega_q / (self.hbar * 2 * np.pi)))
 
@@ -1432,7 +1432,7 @@ class CircuitQ:
         # S_q = 2*self.hbar/Q_cap * 1/np.tanh(thermal_factor/2) / (1 +
         #                                                      np.exp(thermal_factor))
         # Nguyen et al.:
-        S_q = self.hbar/Q_cap * (1 + 1/np.tanh(thermal_factor/2) )
+        S_q = self.hbar/Q_cap * (1 + 1/jnp.tanh(thermal_factor/2) )
 
         # print("CircuitQ: Omega {:e}".format(self.omega_q/(self.hbar*2*np.pi)))
         # print("CircuitQ: Thermal Factor {:e}".format(thermal_factor))
