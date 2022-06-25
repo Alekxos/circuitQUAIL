@@ -895,28 +895,44 @@ class CircuitQ:
             for var_type in ['phi', 'q', 'q_quadratic']:
                 mtx_list = copy.deepcopy(self.mtx_id_list)
                 if var_type=='phi':
-                    mtx_list[n_mtx_list] = phi_mtx(flux_grid)
+                    # mtx_list[n_mtx_list] = phi_mtx(flux_grid)
+                    mtx_list = mtx_list.at[n_mtx_list].set(phi_mtx(flux_grid))
                 elif var_type=='q':
                     if n in self.charge_basis_nodes:
-                        mtx_list[n_mtx_list] = q_mtx(self.n_cutoff)
+                        # mtx_list[n_mtx_list] = q_mtx(self.n_cutoff)
+                        mtx_list = mtx_list.at[n_mtx_list].set(q_mtx(self.n_cutoff))
                     else:
-                        mtx_list[n_mtx_list] = -1j*self.hbar*der_mtx(flux_grid,
-                                                                     periodic=False)
+                        # mtx_list[n_mtx_list] = -1j*self.hbar*der_mtx(flux_grid,
+                        #                                              periodic=False)
+                        mtx_val = -1j*self.hbar*der_mtx(flux_grid, periodic=False)
+                        mtx_list = mtx_list.at[n_mtx_list].set(mtx_val)
                     if n in self.offset_nodes:
-                        mtx_list[n_mtx_list] += offset * jnp.identity(self.n_dim)
+                        # mtx_list[n_mtx_list] += offset * jnp.identity(self.n_dim)
+                        mtx_val = mtx_list[n_mtx_list] + offset * jnp.identity(self.n_dim)
+                        mtx_list = mtx_list.at[n_mtx_list].set(mtx_val)
                 elif var_type=='q_quadratic':
                     if n in self.charge_basis_nodes:
-                        mtx_list[n_mtx_list] = q_mtx(self.n_cutoff)**2
+                        # mtx_list[n_mtx_list] = q_mtx(self.n_cutoff)**2
+                        mtx_list = mtx_list.at[n_mtx_list].set(q_mtx(self.n_cutoff)**2)
                         if n in self.offset_nodes:
-                            mtx_list[n_mtx_list] = (q_mtx(self.n_cutoff) +
-                                                         offset * jnp.identity(self.n_dim)) ** 2
+                            # mtx_list[n_mtx_list] = (q_mtx(self.n_cutoff) +
+                            #                              offset * jnp.identity(self.n_dim)) ** 2
+                            mtx_val = (q_mtx(self.n_cutoff) +
+                                                          offset * jnp.identity(self.n_dim)) ** 2
+                            mtx_list = mtx_list.at[n_mtx_list].set(mtx_val)
                     else:
-                        mtx_list[n_mtx_list] = -1*(self.hbar**2)*scnd_der_mtx(flux_grid,
-                                                                            periodic=False)
+                        # mtx_list[n_mtx_list] = -1*(self.hbar**2)*scnd_der_mtx(flux_grid,
+                        #                                                     periodic=False)
+                        mtx_val = -1*(self.hbar**2)*scnd_der_mtx(flux_grid, periodic=False)
+                        mtx_list = mtx_list.at[n_mtx_list].set(mtx_val)
                         if n in self.offset_nodes:
-                            mtx_list[n_mtx_list] += (-2*offset *1j*self.hbar*der_mtx(flux_grid,
+                            # mtx_list[n_mtx_list] += (-2*offset *1j*self.hbar*der_mtx(flux_grid,
+                            #                                          periodic=False) +
+                            #                         offset**2 * jnp.identity(self.n_dim) )
+                            mtx_val = (-2*offset *1j*self.hbar*der_mtx(flux_grid,
                                                                      periodic=False) +
                                                     offset**2 * jnp.identity(self.n_dim) )
+                            mtx_list = mtx_list.at[n_mtx_list].set(mtx_list[n_mtx_list] + mtx_val)
                 mtx_num = self._kron_product(mtx_list)
                 if var_type=='phi':
                     self.phi_num_dict[n] = mtx_num
@@ -939,12 +955,16 @@ class CircuitQ:
             mtx_list_single_charge = copy.deepcopy(self.mtx_id_list)
             if indices[0] not in self.ground_nodes:
                 pos_u = self.subspace_pos[indices[0]]
-                mtx_list[pos_u] = cmplx_exp_phi_mtx(self.n_cutoff).getH()
-                mtx_list_single_charge[pos_u] = cmplx_exp_phi_mtx(2*self.n_cutoff).getH()
+                # mtx_list[pos_u] = cmplx_exp_phi_mtx(self.n_cutoff).getH()
+                mtx_list = mtx_list.at[pos_u].set(cmplx_exp_phi_mtx(self.n_cutoff).getH())
+                # mtx_list_single_charge[pos_u] = cmplx_exp_phi_mtx(2*self.n_cutoff).getH()
+                mtx_list_single_charge = mtx_list_single_charge.at[pos_u].set(cmplx_exp_phi_mtx(2*self.n_cutoff).getH())
             if indices[1] not in self.ground_nodes:
                 pos_v = self.subspace_pos[indices[1]]
-                mtx_list[pos_v] = cmplx_exp_phi_mtx(self.n_cutoff)
-                mtx_list_single_charge[pos_v] = cmplx_exp_phi_mtx(2*self.n_cutoff)
+                # mtx_list[pos_v] = cmplx_exp_phi_mtx(self.n_cutoff)
+                mtx_list = mtx_list.at[pos_v].set(cmplx_exp_phi_mtx(self.n_cutoff))
+                # mtx_list_single_charge[pos_v] = cmplx_exp_phi_mtx(2*self.n_cutoff)
+                mtx_list_single_charge = mtx_list_single_charge.at[pos_v].set(cmplx_exp_phi_mtx(2*self.n_cutoff))
             mtx_num = self._kron_product(mtx_list)
             mtx_num_single_charge = self._kron_product(mtx_list_single_charge)
             loop_flux = 0
