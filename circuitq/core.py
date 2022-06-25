@@ -742,12 +742,16 @@ class CircuitQ:
             m = jnp.zeros((dim, dim))
             for n in range(dim):
                 if n + 1 <= dim - 1:
-                    m[n, n + 1] = 1
+                    # m[n, n + 1] = 1
+                    m = m.at[n, n + 1].set(1)
                 if n - 1 >= 0:
-                    m[n, n - 1] = -1
+                    # m[n, n - 1] = -1
+                    m = m.at[n, n - 1].set(-1)
             if periodic:
-                m[0, dim - 1] = -1
-                m[dim - 1, 0] = 1
+                # m[0, dim - 1] = -1
+                m = m.at[0, dim - 1].set(-1)
+                # m[dim - 1, 0] = 1
+                m = m.at[dim - 1, 0].set(1)
             m = m / (2*delta)
             return m
 
@@ -757,14 +761,19 @@ class CircuitQ:
             delta = abs(coord_list[1] - coord_list[0])
             m = jnp.zeros((dim, dim))
             for n in range(dim):
-                m[n, n] = -2
+                # m[n, n] = -2
+                m = m.at[n, n].set(-2)
                 if n + 1 <= dim - 1:
-                    m[n, n + 1] = 1
+                    # m[n, n + 1] = 1
+                    m = m.at[n, n + 1].set(1)
                 if n - 1 >= 0:
-                    m[n, n - 1] = 1
+                    # m[n, n - 1] = 1
+                    m = m.at[n, n - 1].set(1)
             if periodic:
-                m[0, dim - 1] = 1
-                m[dim - 1, 0] = 1
+                # m[0, dim - 1] = 1
+                m = m.at[0, dim - 1].set(1)
+                # m[dim - 1, 0] = 1
+                m = m.at[dim - 1, 0].set(1)
             m = m / (delta ** 2)
             return m
 
@@ -773,7 +782,8 @@ class CircuitQ:
             dim = len(coord_list)
             m = jnp.zeros((dim, dim))
             for n, item in enumerate(coord_list):
-                m[n, n] = item
+                # m[n, n] = item
+                m = m.at[n, n].set(item)
             return m
 
         # cos function
@@ -788,15 +798,16 @@ class CircuitQ:
 
         # Charge matrix
         def q_mtx(n_cutoff):
-            diagonal = 2*self.e*np.arange(-n_cutoff, n_cutoff+1)
+            diagonal = 2 * self.e * np.arange(-n_cutoff, n_cutoff + 1)
             return jnp.diag(diagonal)
 
         # e^{i \Phi} matrix
         def cmplx_exp_phi_mtx(n_cutoff):
-            dim = 2*n_cutoff+1
+            dim = 2 * n_cutoff + 1
             m = jnp.zeros((dim, dim))
-            for n in range(1,dim):
-                m[n,n-1] = 1
+            for n in range(1, dim):
+                # m[n,n-1] = 1
+                m = m.at[n, n - 1].set(1)
             return m
 
         # =============================================================================
@@ -907,7 +918,7 @@ class CircuitQ:
                     else:
                         # mtx_list[n_mtx_list] = -1j*self.hbar*der_mtx(flux_grid,
                         #                                              periodic=False)
-                        mtx_val = -1j*self.hbar*der_mtx(flux_grid, periodic=False)
+                        mtx_val = -1j * self.hbar * der_mtx(flux_grid, periodic=False)
                         mtx_list = mtx_list.at[n_mtx_list].set(mtx_val)
                     if n in self.offset_nodes:
                         # mtx_list[n_mtx_list] += offset * jnp.identity(self.n_dim)
@@ -980,15 +991,15 @@ class CircuitQ:
                     parameter_pos = self.h_parameters.index(l_f)
                     loop_flux += self.parameter_values[parameter_pos]
             mtx_num = jnp.exp(-1j*loop_flux/self.phi_0) * mtx_num
-            mtx_num_single_charge = jnp.exp(-1j*loop_flux/(2*self.phi_0)) * mtx_num_single_charge
-            mtx_num_cos = 0.5*(mtx_num + mtx_num.getH())
+            mtx_num_single_charge = jnp.exp(-1j * loop_flux/(2 * self.phi_0)) * mtx_num_single_charge
+            mtx_num_cos = 0.5 * (mtx_num + mtx_num.getH())
             cos_charge_matrices.append(mtx_num_cos)
             cos_charge_list.append(cos)
-            mtx_num_sin_phi_half = -0.5j*(mtx_num_single_charge.getH()-mtx_num_single_charge)
+            mtx_num_sin_phi_half = -0.5j * (mtx_num_single_charge.getH()-mtx_num_single_charge)
             sin_phi_half_matrices.append(mtx_num_sin_phi_half)
             sin_phi_half_list.append(self.sin_phi_half_operators_dict[indices])
             if indices in self.sin_charge_dict:
-                mtx_num_sin = 0.5j*(mtx_num.getH()-mtx_num)
+                mtx_num_sin = 0.5j * (mtx_num.getH()-mtx_num)
                 sin_charge_matrices.append(mtx_num_sin)
                 sin_charge_list.append(self.sin_charge_dict[indices])
 
