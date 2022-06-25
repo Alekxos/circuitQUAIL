@@ -683,7 +683,8 @@ class CircuitQ:
             Total operator constructed by the kronecker product.
 
         """
-        nbr_subsystems = len(mtx_list)
+        # nbr_subsystems = len(mtx_list)
+        nbr_subsystems = mtx_list.shape[0]
         if nbr_subsystems == 1:
             mtx_num = mtx_list[0]
         else:
@@ -894,6 +895,8 @@ class CircuitQ:
                 offset = parameter_values[parameter_pos]
             for var_type in ['phi', 'q', 'q_quadratic']:
                 mtx_list = copy.deepcopy(self.mtx_id_list)
+                ## Convert from list to jax array
+                mtx_list = jnp.array(mtx_list)
                 if var_type=='phi':
                     # mtx_list[n_mtx_list] = phi_mtx(flux_grid)
                     mtx_list = mtx_list.at[n_mtx_list].set(phi_mtx(flux_grid))
@@ -952,7 +955,10 @@ class CircuitQ:
         # =============================================================================
         for indices, cos in self.cos_charge_dict.items():
             mtx_list = copy.deepcopy(self.mtx_id_list)
+            ## Convert from lists to jax arrays
+            mtx_list = jnp.array(mtx_list)
             mtx_list_single_charge = copy.deepcopy(self.mtx_id_list)
+            mtx_list_single_charge = jnp.array(mtx_list_single_charge)
             if indices[0] not in self.ground_nodes:
                 pos_u = self.subspace_pos[indices[0]]
                 # mtx_list[pos_u] = cmplx_exp_phi_mtx(self.n_cutoff).getH()
@@ -995,6 +1001,8 @@ class CircuitQ:
                 continue
             node_list = [key[0], key[1]]
             mtx_list = copy.deepcopy(self.mtx_id_list)
+            ## Convert from list to jax array
+            mtx_list = jnp.array(mtx_list)
             parameter_pos = self.h_parameters.index(value)
             for n in node_list:
                 if self.phi_dict[n] == 0:
@@ -1374,6 +1382,9 @@ class CircuitQ:
         for indices, sin_phi_half in self.sin_phi_half_operators_dict.items():
             mtx_list_even = copy.deepcopy(self.mtx_id_list)
             mtx_list_odd = copy.deepcopy(self.mtx_id_list)
+            ## Convert from lists to jax arrays
+            mtx_list_even = jnp.array(mtx_list_even)
+            mtx_list_odd = jnp.array(mtx_list_odd)
             for node in indices[:2]:
                 if ((node not in self.ground_nodes) and
                     (node in self.charge_basis_nodes)):
