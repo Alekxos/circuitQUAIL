@@ -4,8 +4,10 @@ import networkx as nx
 import math
 import sympy as sp
 import numpy as np
-import scipy.sparse as spa
-import scipy.sparse.linalg as spa_linalg
+import jax.numpy as jnp
+import jax.scipy as jsp
+# import scipy.sparse as spa
+# import scipy.sparse.linalg as spa_linalg
 
 class CircuitQ:
     """
@@ -685,9 +687,9 @@ class CircuitQ:
         if nbr_subsystems == 1:
             mtx_num = mtx_list[0]
         else:
-            mtx_num = spa.kron(mtx_list[0], mtx_list[1])
+            mtx_num = jnp.kron(mtx_list[0], mtx_list[1])
             for i in range(2, nbr_subsystems):
-                mtx_num = spa.kron(mtx_num, mtx_list[i])
+                mtx_num = jnp.kron(mtx_num, mtx_list[i])
         return mtx_num
 
     def get_numerical_hamiltonian(self, n_dim, grid_length = None, unit_cell = False,
@@ -746,7 +748,7 @@ class CircuitQ:
                 m[0, dim - 1] = -1
                 m[dim - 1, 0] = 1
             m = m / (2*delta)
-            return spa.csr_matrix(m)
+            return m
 
         # Second derivative matrix
         def scnd_der_mtx(coord_list, periodic=True):
@@ -763,7 +765,7 @@ class CircuitQ:
                 m[0, dim - 1] = 1
                 m[dim - 1, 0] = 1
             m = m / (delta ** 2)
-            return spa.csr_matrix(m)
+            return m
 
         # Phi matrix
         def phi_mtx(coord_list):
@@ -771,22 +773,22 @@ class CircuitQ:
             m = np.zeros((dim, dim))
             for n, item in enumerate(coord_list):
                 m[n, n] = item
-            return spa.csr_matrix(m)
+            return m
 
         # cos function
         def mtx_cos(m):
             m_dia = m.diagonal()
-            return spa.diags(np.cos(m_dia), format='csr')
+            return np.diag(np.cos(m_dia))
 
         # sin function
         def mtx_sin(m):
             m_dia = m.diagonal()
-            return spa.diags(np.sin(m_dia), format='csr')
+            return np.diag(np.sin(m_dia))
 
         # Charge matrix
         def q_mtx(n_cutoff):
             diagonal = 2*self.e*np.arange(-n_cutoff, n_cutoff+1)
-            return spa.diags(diagonal, format='csr')
+            return np.diag(diagonal)
 
         # e^{i \Phi} matrix
         def cmplx_exp_phi_mtx(n_cutoff):
@@ -794,7 +796,7 @@ class CircuitQ:
             m = np.zeros((dim, dim))
             for n in range(1,dim):
                 m[n,n-1] = 1
-            return spa.csr_matrix(m)
+            return m
 
         # =============================================================================
         # Define default parameter values if not given
@@ -872,7 +874,7 @@ class CircuitQ:
         self.n_cutoff = int((self.n_dim-1) / 2 )
         self.flux_list = np.linspace(-self.grid_length, self.grid_length, self.n_dim)
         self.charge_list = 2*self.e*np.arange(-self.n_cutoff, self.n_cutoff+1)
-        self.mtx_id_list = [spa.identity(self.n_dim) for n in range(nbr_subsystems)]
+        self.mtx_id_list = [jnp.identity(self.n_dim) for n in range(nbr_subsystems)]
         n_mtx_list = 0
         # q-matrices in charge and flux basis, phi-matrices (flux basis)
         # =============================================================================
@@ -901,20 +903,20 @@ class CircuitQ:
                         mtx_list[n_mtx_list] = -1j*self.hbar*der_mtx(flux_grid,
                                                                      periodic=False)
                     if n in self.offset_nodes:
-                        mtx_list[n_mtx_list] += offset * spa.identity(self.n_dim)
+                        mtx_list[n_mtx_list] += offset * jnp.identity(self.n_dim)
                 elif var_type=='q_quadratic':
                     if n in self.charge_basis_nodes:
                         mtx_list[n_mtx_list] = q_mtx(self.n_cutoff)**2
                         if n in self.offset_nodes:
                             mtx_list[n_mtx_list] = (q_mtx(self.n_cutoff) +
-                                                         offset * spa.identity(self.n_dim)) ** 2
+                                                         offset * jnp.identity(self.n_dim)) ** 2
                     else:
                         mtx_list[n_mtx_list] = -1*(self.hbar**2)*scnd_der_mtx(flux_grid,
                                                                             periodic=False)
                         if n in self.offset_nodes:
                             mtx_list[n_mtx_list] += (-2*offset *1j*self.hbar*der_mtx(flux_grid,
                                                                      periodic=False) +
-                                                    offset**2 * spa.identity(self.n_dim) )
+                                                    offset**2 * jnp.identity(self.n_dim) )
                 mtx_num = self._kron_product(mtx_list)
                 if var_type=='phi':
                     self.phi_num_dict[n] = mtx_num
@@ -978,7 +980,7 @@ class CircuitQ:
                 if self.phi_dict[n] == 0:
                     continue
                 mtx_list[self.subspace_pos[n]] = (self.parameter_values[parameter_pos]*
-                                                    spa.identity(self.n_dim))
+                                                    jnp.identity(self.n_dim))
                 # The offset should only be added once
                 break
             mtx_num = self._kron_product(mtx_list)
@@ -1100,8 +1102,9 @@ class CircuitQ:
         self.n_eig = n_eig
         v0 = [0]*dim_total
         v0[0] = 1
-        evals, estates = spa_linalg.eigsh(self.h_num, k=self.n_eig, which='SA'#)
-                                          ,v0=v0)
+        # evals, estates = spa_linalg.eigsh(self.h_num, k=self.n_eig, which='SA'#)
+        #                                   ,v0=v0)
+        evals, estates = jnp.eigh(self.h_num)
         idx_sort = np.argsort(evals)
         self.evals = evals[idx_sort]
         self.estates = estates[:, idx_sort]
@@ -1308,14 +1311,14 @@ class CircuitQ:
             mtx = np.zeros((dim_single, dim))
             for n in range(dim):
                 mtx[2*n, n] = 1
-            return spa.csr_matrix(mtx)
+            return mtx
 
         def cooper_to_odd(dim):
             dim_single = 2*dim-1
             mtx = np.zeros((dim_single, dim))
             for n in range(dim-1):
                 mtx[2*n+1, n] = 1
-            return spa.csr_matrix(mtx)
+            return mtx
 
         # =============================================================================
         # Set numerical values for parameters
@@ -1338,8 +1341,8 @@ class CircuitQ:
         # =============================================================================
         # Set ground state and excited state
         # =============================================================================
-        ground_state = spa.csr_matrix(self.ground_state)
-        excited_state = spa.csr_matrix(self.estates[:,excited_level])
+        ground_state = self.ground_state
+        excited_state = self.estates[:, excited_level]
 
         # =============================================================================
         # Calculate T1 contribution
@@ -1440,8 +1443,8 @@ class CircuitQ:
         # =============================================================================
         if excited_level is None:
             excited_level = self.excited_level
-        ground_state = spa.csr_matrix(self.ground_state)
-        excited_state = spa.csr_matrix(self.estates[:,excited_level])
+        ground_state = self.ground_state
+        excited_state = self.estates[:,excited_level]
 
         # =============================================================================
         # Calculate T1 contribution
@@ -1515,8 +1518,8 @@ class CircuitQ:
         # =============================================================================
         if excited_level is None:
             excited_level = self.excited_level
-        ground_state = spa.csr_matrix(self.ground_state)
-        excited_state = spa.csr_matrix(self.estates[:,excited_level])
+        ground_state = self.ground_state
+        excited_state = self.estates[:,excited_level]
 
         # =============================================================================
         # Calculate T1 contribution
