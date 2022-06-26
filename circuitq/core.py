@@ -971,8 +971,8 @@ class CircuitQ:
             mtx_list = copy.deepcopy(self.mtx_id_list)
             ## Convert from lists to jax arrays
             mtx_list = jnp.array(mtx_list)
-            mtx_list_single_charge = copy.deepcopy(self.mtx_id_list)
-            mtx_list_single_charge = jnp.array(mtx_list_single_charge)
+            # mtx_list_single_charge = copy.deepcopy(self.mtx_id_list)
+            mtx_list_single_charge = [None for _ in range(nbr_subsystems)]
             if indices[0] not in self.ground_nodes:
                 pos_u = self.subspace_pos[indices[0]]
                 # mtx_list[pos_u] = cmplx_exp_phi_mtx(self.n_cutoff).getH()
@@ -984,6 +984,10 @@ class CircuitQ:
                 mtx_list = mtx_list.at[pos_v].set(cmplx_exp_phi_mtx(self.n_cutoff))
                 mtx_list_single_charge[pos_v] = cmplx_exp_phi_mtx(2*self.n_cutoff)
             mtx_num = self._kron_product(mtx_list)
+            ## Manual hack to avoid overwriting list entries with item assignment
+            for n in range(nbr_subsystems):
+                if mtx_list_single_charge[n] is None:
+                    mtx_list_single_charge[n] = jnp.identity(self.n_dim)
             mtx_num_single_charge = self._kron_product(mtx_list_single_charge)
             loop_flux = 0
             if indices in self.loop_fluxes_in_cos_arg:
