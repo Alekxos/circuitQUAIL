@@ -1150,7 +1150,7 @@ class CircuitQ:
         # v0[0] = 1
         # evals, estates = spa_linalg.eigsh(self.h_num, k=self.n_eig, which='SA'#)
         #                                   ,v0=v0)
-        evals, estates = jnp.eigh(self.h_num)
+        evals, estates = jnp.linalg.eigh(self.h_num)
         idx_sort = jnp.argsort(evals)
         self.evals = evals[idx_sort]
         self.estates = estates[:, idx_sort]
