@@ -1190,7 +1190,7 @@ class CircuitQ:
                           "This has an unfortunate effect on the T1 times.")
             self.degenerated = True
         if excited_level == len(self.evals)-1:
-            raise Exception("All states in self.evals are degenerated")
+            raise Exception("All states in self.evals are degenerate.")
         self.excited_level = excited_level
         self.excited_subspace.append(excited_level)
         current_level = excited_level
@@ -1199,7 +1199,7 @@ class CircuitQ:
             if jnp.isclose(self.evals[current_level], self.evals[k], rtol = tolerance):
                 if current_level == excited_level:
                     self.excited_subspace.append(k)
-                    warnings.warn("The excited state seems to be degenerated. "
+                    warnings.warn("The excited state seems to be degenerate. "
                                   "This has an unfortunate effect on the T1 times.")
                     self.degenerated = True
                 continue
@@ -1208,14 +1208,14 @@ class CircuitQ:
                 check_level += 1
             for l in range(excited_level, k):
                 quotient = jnp.abs((self.evals[k] - self.evals[l]) / (self.evals[excited_level] - self.evals[0]))
-                quotient = jnp.min(quotient, 2)
+                quotient = jnp.min((quotient, 2))
                 quotients.append(quotient)
             if check_level >= nbr_check_levels:
                 break
         if check_level < nbr_check_levels:
             if self.degenerated:
                 warnings.warn("Not enough eigenenergies to check spectrum for nbr_check_levels."
-                              "However at least one of the qubit states is degenerated anyway.")
+                              "However, at least one of the qubit states is degenerate anyway.")
             else:
                 raise Exception("Not enough eigenenergies to check spectrum for nbr_check_levels")
         if len(quotients) > 0:
