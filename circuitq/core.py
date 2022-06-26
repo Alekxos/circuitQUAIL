@@ -976,8 +976,10 @@ class CircuitQ:
             if indices[0] not in self.ground_nodes:
                 pos_u = self.subspace_pos[indices[0]]
                 # mtx_list[pos_u] = cmplx_exp_phi_mtx(self.n_cutoff).getH()
-                mtx_list = mtx_list.at[pos_u].set(cmplx_exp_phi_mtx(self.n_cutoff).getH())
-                mtx_list_single_charge[pos_u] = cmplx_exp_phi_mtx(2*self.n_cutoff).getH()
+                mtx_val = jnp.conjugate(jnp.transpose(cmplx_exp_phi_mtx(self.n_cutoff)))
+                mtx_list = mtx_list.at[pos_u].set(mtx_val)
+                mtx_val_single_charge = jnp.conjugate(jnp.transpose(cmplx_exp_phi_mtx(2*self.n_cutoff)))
+                mtx_list_single_charge[pos_u] = mtx_val_single_charge
             if indices[1] not in self.ground_nodes:
                 pos_v = self.subspace_pos[indices[1]]
                 # mtx_list[pos_v] = cmplx_exp_phi_mtx(self.n_cutoff)
@@ -997,14 +999,14 @@ class CircuitQ:
                     loop_flux += self.parameter_values[parameter_pos]
             mtx_num = jnp.exp(-1j*loop_flux/self.phi_0) * mtx_num
             mtx_num_single_charge = jnp.exp(-1j * loop_flux/(2 * self.phi_0)) * mtx_num_single_charge
-            mtx_num_cos = 0.5 * (mtx_num + mtx_num.getH())
+            mtx_num_cos = 0.5 * (mtx_num + jnp.transpose(jnp.conjugate(mtx_num)))
             cos_charge_matrices.append(mtx_num_cos)
             cos_charge_list.append(cos)
-            mtx_num_sin_phi_half = -0.5j * (mtx_num_single_charge.getH()-mtx_num_single_charge)
+            mtx_num_sin_phi_half = -0.5j * (jnp.conjugate(jnp.transpose(mtx_num_single_charge)) - mtx_num_single_charge)
             sin_phi_half_matrices.append(mtx_num_sin_phi_half)
             sin_phi_half_list.append(self.sin_phi_half_operators_dict[indices])
             if indices in self.sin_charge_dict:
-                mtx_num_sin = 0.5j * (mtx_num.getH()-mtx_num)
+                mtx_num_sin = 0.5j * (jnp.transpose(jnp.conjugate(mtx_num)) - mtx_num)
                 sin_charge_matrices.append(mtx_num_sin)
                 sin_charge_list.append(self.sin_charge_dict[indices])
 
