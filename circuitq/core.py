@@ -741,7 +741,7 @@ class CircuitQ:
         # Central derivative matrix
         def der_mtx(coord_list, periodic=True):
             dim = len(coord_list)
-            delta = abs(coord_list[1] - coord_list[0])
+            delta = jnp.abs(coord_list[1] - coord_list[0])
             m = jnp.zeros((dim, dim))
             for n in range(dim):
                 if n + 1 <= dim - 1:
@@ -761,7 +761,7 @@ class CircuitQ:
         # Second derivative matrix
         def scnd_der_mtx(coord_list, periodic=True):
             dim = len(coord_list)
-            delta = abs(coord_list[1] - coord_list[0])
+            delta = jnp.abs(coord_list[1] - coord_list[0])
             m = jnp.zeros((dim, dim))
             for n in range(dim):
                 # m[n, n] = -2
@@ -1183,10 +1183,10 @@ class CircuitQ:
         # as excited level
         tolerance = 0.001    #*100 gives tolerance in percentage for comparison of the
                             # states to check for degeneracy
-        while math.isclose(self.evals[excited_level], self.evals[0], rel_tol=tolerance):
+        while jnp.isclose(self.evals[excited_level], self.evals[0], rel_tol = tolerance):
             excited_level += 1
-        if excited_level >1:
-            warnings.warn("The ground state seems to be degenerated. "
+        if excited_level > 1:
+            warnings.warn("The ground state seems to be degenerate. "
                           "This has an unfortunate effect on the T1 times.")
             self.degenerated = True
         if excited_level == len(self.evals)-1:
@@ -1196,7 +1196,7 @@ class CircuitQ:
         current_level = excited_level
         check_level = 2
         for k in range(excited_level + 1, len(self.evals)):
-            if math.isclose(self.evals[current_level], self.evals[k], rel_tol=tolerance):
+            if jnp.isclose(self.evals[current_level], self.evals[k], rel_tol = tolerance):
                 if current_level == excited_level:
                     self.excited_subspace.append(k)
                     warnings.warn("The excited state seems to be degenerated. "
@@ -1206,9 +1206,9 @@ class CircuitQ:
             else:
                 current_level = k
                 check_level += 1
-            for l in range(excited_level,k):
-                quotient = abs((self.evals[k]-self.evals[l])/(self.evals[excited_level]-self.evals[0]))
-                quotient = min(quotient, 2)
+            for l in range(excited_level, k):
+                quotient = jnp.abs((self.evals[k] - self.evals[l]) / (self.evals[excited_level] - self.evals[0]))
+                quotient = jnp.min(quotient, 2)
                 quotients.append(quotient)
             if check_level >= nbr_check_levels:
                 break
@@ -1220,8 +1220,8 @@ class CircuitQ:
                 raise Exception("Not enough eigenenergies to check spectrum for nbr_check_levels")
         if len(quotients) > 0:
             for quotient in quotients:
-                distances_to_1.append(abs(1-quotient))
-            self.anharmonicity = min(distances_to_1)
+                distances_to_1.append(jnp.abs(1 - quotient))
+            self.anharmonicity = jnp.min(distances_to_1)
 
         return self.anharmonicity
 
@@ -1325,10 +1325,10 @@ class CircuitQ:
         omega_q: float
             Qubit energy (difference between excited level and ground state energy.
         """
-        ground_state = self.estates[:,0]
+        ground_state = self.estates[:, 0]
         self.get_spectrum_anharmonicity()
         excited_level = self.excited_level
-        omega_q = abs(self.evals[excited_level]-self.evals[0])
+        omega_q = jnp.abs(self.evals[excited_level] - self.evals[0])
         self.ground_state = ground_state
         self.omega_q = omega_q
         return self.ground_state, self.excited_level, self.omega_q
@@ -1421,7 +1421,7 @@ class CircuitQ:
             # print("CircuitQ: E_J: {:e}".format(E_J))
             # print("CircuitQ: S_qp Quasiparticles Junction: {:e}".format(S_qp_E))
             # print("CircuitQ: Braket Junction: {:e}".format(abs(braket)))
-            T1_inv += S_qp_E * abs(braket)**2
+            T1_inv += S_qp_E * jnp.abs(braket)**2
             # print("CircuitQ: Junction T1 contribution: {:e}".format(1/(S_qp_E * abs(braket)**2)))
 
         for indices, edge_flux in self.edge_flux_inductance_num.items():
@@ -1435,7 +1435,7 @@ class CircuitQ:
             # print("CircuitQ: E_L: {:e}".format(E_L))
             # print("CircuitQ: S_qp Quasiparticles Inductance: {:e}".format(S_qp_L))
             # print("CircuitQ: Braket Inductance: {:e}".format(abs(braket)))
-            T1_inv += S_qp_L * abs(braket) ** 2
+            T1_inv += S_qp_L * jnp.abs(braket) ** 2
             # print("CircuitQ: Inductance T1 contribution: {:e}".format(1 /(S_qp_L * abs(braket) ** 2)))
 
         if T1_inv==0:
@@ -1512,7 +1512,7 @@ class CircuitQ:
             braket = (ground_state.conjugate() * charge_operators_difference *
                       excited_state.transpose()).data[0]
             capacitance_value = self.parameter_values_dict[capacitance]
-            T1_inv += S_q / (self.hbar ** 2 * capacitance_value) * abs(braket) ** 2
+            T1_inv += S_q / (self.hbar ** 2 * capacitance_value) * jnp.abs(braket) ** 2
             # print("CircuitQ: NSD rescaled {:e}".format(S_q / self.hbar ** 2 / capacitance_value *
             #                                            (2 * self.e)**2))
             # print("CircuitQ: S_q rescaled (to compare to S_qp): {:e}".format(S_q/
@@ -1520,10 +1520,10 @@ class CircuitQ:
             # print("CircuitQ: Braket Rescaled {:e}".format((abs(braket) / (2 * self.e))))
             # print("CircuitQ: T1_inv {:e}".format(T1_inv))
 
-        if T1_inv==0:
+        if T1_inv == 0:
             T1 = None
         else:
-            T1 = 1/T1_inv
+            T1 = 1 / T1_inv
         self.T1_dielectric_loss = T1
 
         return self.T1_dielectric_loss
@@ -1582,18 +1582,18 @@ class CircuitQ:
                 #                               *self.parameter_values[2]/self.phi_0))
                 # print("CircuitQ: S_phi rescaled {:e}".format(S_phi/self.hbar**2
                 #                         *self.parameter_values[2]**2/self.phi_0**2))
-                T1_inv += S_phi/self.hbar**2 * abs(braket)**2
+                T1_inv += S_phi / self.hbar**2 * jnp.abs(braket)**2
         else:
             for current_element in self.current_operators_all_num:
                 braket = (ground_state.conjugate()*current_element*
                                                  excited_state.transpose()).data[0]
                 # print("CircuitQ: Braket Rescaled {:e}".format(abs(braket)))
                 #                               #*self.parameter_values[2]))
-                T1_inv += S_phi/self.hbar**2 * abs(braket)**2
-        if T1_inv==0:
+                T1_inv += S_phi / self.hbar**2 * jnp.abs(braket)**2
+        if T1_inv == 0:
             T1 = None
         else:
-            T1 = 1/T1_inv
+            T1 = 1 / T1_inv
         self.T1_inductive_loss = T1
 
         return self.T1_inductive_loss
