@@ -1208,7 +1208,7 @@ class CircuitQ:
                 check_level += 1
             for l in range(excited_level, k):
                 quotient = jnp.abs((self.evals[k] - self.evals[l]) / (self.evals[excited_level] - self.evals[0]))
-                quotient = jnp.min((quotient, 2))
+                quotient = jnp.min(jnp.array([quotient, 2]))
                 quotients.append(quotient)
             if check_level >= nbr_check_levels:
                 break
@@ -1221,7 +1221,7 @@ class CircuitQ:
         if len(quotients) > 0:
             for quotient in quotients:
                 distances_to_1.append(jnp.abs(1 - quotient))
-            self.anharmonicity = jnp.min(distances_to_1)
+            self.anharmonicity = jnp.min(jnp.array(distances_to_1))
 
         return self.anharmonicity
 
