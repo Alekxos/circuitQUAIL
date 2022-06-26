@@ -1183,7 +1183,7 @@ class CircuitQ:
         # as excited level
         tolerance = 0.001    #*100 gives tolerance in percentage for comparison of the
                             # states to check for degeneracy
-        while jnp.isclose(self.evals[excited_level], self.evals[0], rel_tol = tolerance):
+        while jnp.isclose(self.evals[excited_level], self.evals[0], rtol = tolerance):
             excited_level += 1
         if excited_level > 1:
             warnings.warn("The ground state seems to be degenerate. "
@@ -1196,7 +1196,7 @@ class CircuitQ:
         current_level = excited_level
         check_level = 2
         for k in range(excited_level + 1, len(self.evals)):
-            if jnp.isclose(self.evals[current_level], self.evals[k], rel_tol = tolerance):
+            if jnp.isclose(self.evals[current_level], self.evals[k], rtol = tolerance):
                 if current_level == excited_level:
                     self.excited_subspace.append(k)
                     warnings.warn("The excited state seems to be degenerated. "
