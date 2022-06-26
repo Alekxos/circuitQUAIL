@@ -684,7 +684,10 @@ class CircuitQ:
 
         """
         # nbr_subsystems = len(mtx_list)
-        nbr_subsystems = mtx_list.shape[0]
+        if type(mtx_list) is list:
+            nbr_subsystems = len(mtx_list)
+        else:
+            nbr_subsystems = mtx_list.shape[0]
         if nbr_subsystems == 1:
             mtx_num = mtx_list[0]
         else:
@@ -974,14 +977,12 @@ class CircuitQ:
                 pos_u = self.subspace_pos[indices[0]]
                 # mtx_list[pos_u] = cmplx_exp_phi_mtx(self.n_cutoff).getH()
                 mtx_list = mtx_list.at[pos_u].set(cmplx_exp_phi_mtx(self.n_cutoff).getH())
-                # mtx_list_single_charge[pos_u] = cmplx_exp_phi_mtx(2*self.n_cutoff).getH()
-                mtx_list_single_charge = mtx_list_single_charge.at[pos_u].set(cmplx_exp_phi_mtx(2*self.n_cutoff).getH())
+                mtx_list_single_charge[pos_u] = cmplx_exp_phi_mtx(2*self.n_cutoff).getH()
             if indices[1] not in self.ground_nodes:
                 pos_v = self.subspace_pos[indices[1]]
                 # mtx_list[pos_v] = cmplx_exp_phi_mtx(self.n_cutoff)
                 mtx_list = mtx_list.at[pos_v].set(cmplx_exp_phi_mtx(self.n_cutoff))
-                # mtx_list_single_charge[pos_v] = cmplx_exp_phi_mtx(2*self.n_cutoff)
-                mtx_list_single_charge = mtx_list_single_charge.at[pos_v].set(cmplx_exp_phi_mtx(2*self.n_cutoff))
+                mtx_list_single_charge[pos_v] = cmplx_exp_phi_mtx(2*self.n_cutoff)
             mtx_num = self._kron_product(mtx_list)
             mtx_num_single_charge = self._kron_product(mtx_list_single_charge)
             loop_flux = 0
